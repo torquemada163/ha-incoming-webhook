@@ -1,0 +1,5 @@
+{
+  "name": "Incoming Webhook",
+  "render_readme": true,
+  "domains": ["switch"]
+}

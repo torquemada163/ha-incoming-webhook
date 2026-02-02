@@ -1,0 +1,16 @@
+{
+  "domain": "incoming_webhook",
+  "name": "Incoming Webhook",
+  "version": "2.0.0",
+  "documentation": "https://github.com/torquemada163/ha-incoming-webhook",
+  "issue_tracker": "https://github.com/torquemada163/ha-incoming-webhook/issues",
+  "codeowners": ["@torquemada163"],
+  "requirements": [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pyjwt>=2.8.0",
+    "pydantic>=2.4.0"
+  ],
+  "config_flow": true,
+  "iot_class": "local_push"
+}
