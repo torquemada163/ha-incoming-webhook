@@ -10,6 +10,7 @@ from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     DOMAIN,
@@ -64,7 +65,7 @@ async def async_setup_entry(
     )
 
 
-class WebhookSwitch(SwitchEntity):
+class WebhookSwitch(SwitchEntity, RestoreEntity):
     """Represents a virtual switch controlled via webhook."""
 
     _attr_has_entity_name = True
