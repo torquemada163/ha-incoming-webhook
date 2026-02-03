@@ -1,25 +1,27 @@
-"""JWT authentication module"""
+"""JWT authentication for incoming webhook requests."""
 
 import jwt
 import logging
 from datetime import datetime, timezone
+from typing import Callable
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from .config import config
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 security = HTTPBearer()
 
 
-def verify_jwt_token(token: str) -> dict:
+def verify_jwt_token(token: str, jwt_secret: str) -> dict:
     """
-    Verify JWT token and return payload
+    Verify JWT token and return the payload.
     
     Args:
-        token: JWT token string
+        token: JWT token string to verify
+        jwt_secret: Secret key for token verification
         
     Returns:
-        Decoded token payload
+        Decoded token payload as dict
+
         
     Raises:
         HTTPException: If token is invalid or expired
@@ -27,54 +29,73 @@ def verify_jwt_token(token: str) -> dict:
     try:
         payload = jwt.decode(
             token,
-            config.jwt_secret,
+            jwt_secret,
             algorithms=["HS256"]
         )
         
-        # Check expiration if present
+        # Check expiration time if present
         if "exp" in payload:
             exp_timestamp = payload["exp"]
             if datetime.now(timezone.utc).timestamp() > exp_timestamp:
-                logger.warning("JWT token expired")
+                _LOGGER.warning("JWT token expired")
                 raise HTTPException(
                     status_code=401,
                     detail="Token expired"
                 )
         
-        logger.debug(f"JWT token verified successfully for issuer: {payload.get('iss', 'unknown')}")
+        _LOGGER.debug(
+            "JWT token verified successfully for issuer: %s",
+            payload.get("iss", "unknown")
+        )
         return payload
         
     except jwt.ExpiredSignatureError:
-        logger.warning("JWT token expired")
+        _LOGGER.warning("JWT token expired")
         raise HTTPException(
             status_code=401,
             detail="Token expired"
         )
     except jwt.InvalidTokenError as e:
-        logger.warning(f"Invalid JWT token: {e}")
+        _LOGGER.warning("Invalid JWT token: %s", e)
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication token"
         )
     except Exception as e:
-        logger.error(f"Unexpected error during JWT verification: {e}")
+        _LOGGER.error("Unexpected error during JWT verification: %s", e)
         raise HTTPException(
             status_code=401,
             detail="Authentication failed"
         )
 
 
-async def verify_authentication(
-    credentials: HTTPAuthorizationCredentials = Security(security)
-) -> dict:
+def create_auth_dependency(jwt_secret: str) -> Callable:
     """
-    FastAPI dependency for JWT authentication
+    Create a FastAPI dependency for JWT authentication.
+    
+    This factory function returns a configured authentication dependency
+    that can be used in FastAPI endpoint definitions.
     
     Args:
-        credentials: HTTP authorization credentials from request
+        jwt_secret: Secret key for JWT token verification
         
     Returns:
-        Decoded JWT payload
+        Async dependency function ready to use with Depends()
     """
-    token = credentials.credentials
-    return verify_jwt_token(token)
+    async def verify_authentication(
+        credentials: HTTPAuthorizationCredentials = Security(security)
+    ) -> dict:
+        """
+        FastAPI dependency that verifies JWT authentication.
+        
+        Args:
+            credentials: HTTP authorization credentials from request header
+            
+        Returns:
+            Decoded JWT payload
+        """
+        token = credentials.credentials
+        return verify_jwt_token(token, jwt_secret)
+    
+    return verify_authentication
+

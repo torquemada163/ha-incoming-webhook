@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Incoming Webhook",
+        "description": "Set up the Incoming Webhook integration. You'll need to configure a JWT secret for authentication and define your webhook switches.",
+        "data": {
+          "jwt_secret": "JWT Secret (min 32 characters)",
+          "port": "Webhook Server Port",
+          "switches": "Switch Configuration (JSON format: [{\"id\": \"switch1\", \"name\": \"Switch 1\", \"icon\": \"mdi:light-switch\"}])"
+        },
+        "data_description": {
+          "jwt_secret": "Secret key for JWT token validation. Must be at least 32 characters long.",
+          "port": "Port for the webhook server (1024-65535). Default: 8099",
+          "switches": "JSON array of switch configurations. Each switch needs an id, name, and optionally an icon."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Incoming Webhook",
+        "description": "Update your Incoming Webhook configuration. You can change the JWT secret, port, or modify your switches.",
+        "data": {
+          "jwt_secret": "JWT Secret (min 32 characters)",
+          "port": "Webhook Server Port",
+          "switches": "Switch Configuration (JSON)"
+        }
+      }
+    },
+    "error": {
+      "invalid_jwt_secret": "JWT Secret must be at least 32 characters long",
+      "invalid_port": "Port must be between 1024 and 65535",
+      "duplicate_switch_id": "Switch IDs must be unique",
+      "invalid_switch_id": "Switch ID can only contain letters, numbers, and underscores",
+      "invalid_switches_format": "Invalid switches format. Expected JSON array with id, name, and optional icon",
+      "empty_switches": "At least one switch must be configured",
+      "unknown": "An unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This integration is already configured"
+    }
+  }
+}

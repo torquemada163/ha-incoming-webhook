@@ -1,18 +1,18 @@
-"""Pydantic models for request/response validation"""
+"""Pydantic models for request and response validation."""
 
 from typing import Optional, Literal
 from pydantic import BaseModel, Field
 
 
 class SwitchConfig(BaseModel):
-    """Configuration for a single virtual switch"""
+    """Configuration for a single virtual switch."""
     id: str = Field(..., description="Unique identifier for the switch")
     name: str = Field(..., description="Friendly name displayed in Home Assistant")
     icon: str = Field(default="mdi:light-switch", description="Material Design Icon")
 
 
 class WebhookRequest(BaseModel):
-    """Incoming webhook request model"""
+    """Incoming webhook request model."""
     switch_id: str = Field(..., description="ID of the switch to control")
     action: Literal["on", "off", "toggle", "status"] = Field(
         ..., 
@@ -25,7 +25,7 @@ class WebhookRequest(BaseModel):
 
 
 class WebhookResponse(BaseModel):
-    """Webhook response model"""
+    """Webhook response model."""
     status: Literal["success", "error"]
     switch_id: Optional[str] = None
     action: Optional[str] = None
@@ -36,7 +36,7 @@ class WebhookResponse(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Error response model"""
+    """Error response model."""
     status: Literal["error"] = "error"
     error: str
     details: Optional[str] = None
