@@ -37,7 +37,9 @@ async def async_setup_entry(
         entry: Config entry for this integration
         async_add_entities: Callback to add new entities
     """
-    switches_config = entry.data.get(CONF_SWITCHES, [])
+    # Get switch configuration from entry data
+    config_data = hass.data[DOMAIN][entry.entry_id]["config"]
+    switches_config = config_data.get(CONF_SWITCHES, [])
     
     if not switches_config:
         _LOGGER.warning("No switches configured in config entry")
@@ -50,12 +52,6 @@ async def async_setup_entry(
     ]
     
     # Store references to entities for webhook server access
-    if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {}
-    
-    if entry.entry_id not in hass.data[DOMAIN]:
-        hass.data[DOMAIN][entry.entry_id] = {}
-    
     hass.data[DOMAIN][entry.entry_id]["entities"] = {
         entity.switch_id: entity for entity in entities
     }
