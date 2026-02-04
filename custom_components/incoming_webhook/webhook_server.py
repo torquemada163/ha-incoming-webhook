@@ -226,13 +226,18 @@ class WebhookServer:
             # Create FastAPI app
             self.app = self._create_app()
             
+            # Configure uvicorn logging to suppress CancelledError on shutdown
+            log_config = uvicorn.config.LOGGING_CONFIG.copy()
+            log_config["loggers"]["uvicorn.error"]["level"] = "CRITICAL"
+            
             # Create Uvicorn server config
             config = uvicorn.Config(
                 app=self.app,
                 host="0.0.0.0",
                 port=port,
-                log_level="warning",  # Minimize logging spam
-                access_log=False,     # Disable access logs
+                log_level="critical",  # Suppress all uvicorn logs except critical
+                access_log=False,      # Disable access logs
+                log_config=log_config, # Custom log config
             )
             
             self.server = uvicorn.Server(config)
@@ -266,20 +271,25 @@ class WebhookServer:
             # Signal server to stop
             self.server.should_exit = True
             
-            # Cancel the server task gracefully
+            # Wait for server to shutdown gracefully
             if self._server_task and not self._server_task.done():
-                self._server_task.cancel()
-                
                 try:
-                    # Wait for task to finish with timeout
-                    await asyncio.wait_for(self._server_task, timeout=5.0)
-                except asyncio.CancelledError:
-                    # This is expected when cancelling the task
-                    _LOGGER.debug("Server task cancelled successfully")
+                    # Wait up to 10 seconds for graceful shutdown
+                    # Don't cancel immediately - let uvicorn finish cleanly
+                    await asyncio.wait_for(self._server_task, timeout=10.0)
                 except asyncio.TimeoutError:
-                    _LOGGER.warning("Server shutdown timed out, forcing stop")
+                    _LOGGER.warning("Server shutdown timed out after 10s, forcing stop")
+                    # Only cancel if timeout
+                    self._server_task.cancel()
+                    try:
+                        await self._server_task
+                    except asyncio.CancelledError:
+                        pass
+                except asyncio.CancelledError:
+                    # Task was cancelled externally (e.g., HA shutdown)
+                    _LOGGER.debug("Server task was cancelled during shutdown")
                 except Exception as e:
-                    _LOGGER.error(f"Error during server shutdown: {e}")
+                    _LOGGER.error(f"Unexpected error during server shutdown: {e}")
             
             _LOGGER.info("Webhook server stopped successfully")
             
