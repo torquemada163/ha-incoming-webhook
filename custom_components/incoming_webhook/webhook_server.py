@@ -213,6 +213,12 @@ class WebhookServer:
         _LOGGER.info(f"Starting webhook server on port {port}")
         
         try:
+            # Pre-import uvicorn modules to avoid blocking calls in event loop
+            # This prevents "Detected blocking call to import_module" warning
+            import uvicorn.protocols.http.auto
+            import uvicorn.protocols.websockets.auto
+            import uvicorn.lifespan.on
+            
             # Create FastAPI app
             self.app = self._create_app()
             
