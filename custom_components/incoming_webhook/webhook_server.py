@@ -237,8 +237,8 @@ class WebhookServer:
             
             self.server = uvicorn.Server(config)
             
-            # Start server in background task
-            self._server_task = self.hass.async_create_task(
+            # Start server as background task (not tracked by HA)
+            self._server_task = asyncio.create_task(
                 self.server.serve()
             )
             

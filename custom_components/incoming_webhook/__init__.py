@@ -33,7 +33,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Set up platforms (switch)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
-    # Start webhook server with delay to avoid blocking HA startup
+    # Start webhook server as background task (not tracked by HA startup)
+    import asyncio
     from .webhook_server import WebhookServer
     
     async def _start_server_delayed():
@@ -47,9 +48,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Store server reference for cleanup
         hass.data[DOMAIN][entry.entry_id]["server"] = server
     
-    # Schedule server start as background task
-    import asyncio
-    hass.async_create_task(_start_server_delayed())
+    # Create background task that is NOT tracked by HA bootstrap
+    asyncio.create_task(_start_server_delayed())
     
     _LOGGER.info("Incoming Webhook integration setup complete")
     return True
