@@ -33,8 +33,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Set up platforms (switch)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
-    # TODO: Phase 4 - Start webhook server
-    # The FastAPI server will be started here as a background task
+    # Start webhook server
+    from .webhook_server import WebhookServer
+    
+    server = WebhookServer(hass, entry)
+    await server.start()
+    
+    # Store server reference for cleanup
+    hass.data[DOMAIN][entry.entry_id]["server"] = server
     
     _LOGGER.info("Incoming Webhook integration setup complete")
     return True
@@ -53,8 +59,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     _LOGGER.info("Unloading Incoming Webhook integration")
     
-    # TODO: Phase 4 - Stop webhook server
-    # Gracefully shut down the FastAPI server here
+    # Stop webhook server
+    server = hass.data[DOMAIN][entry.entry_id].get("server")
+    if server:
+        await server.stop()
     
     # Unload platforms
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
