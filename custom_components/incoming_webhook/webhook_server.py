@@ -1,5 +1,6 @@
 """Webhook server for incoming webhook integration."""
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -265,9 +266,20 @@ class WebhookServer:
             # Signal server to stop
             self.server.should_exit = True
             
-            # Wait for server task to complete
-            if self._server_task:
-                await self._server_task
+            # Cancel the server task gracefully
+            if self._server_task and not self._server_task.done():
+                self._server_task.cancel()
+                
+                try:
+                    # Wait for task to finish with timeout
+                    await asyncio.wait_for(self._server_task, timeout=5.0)
+                except asyncio.CancelledError:
+                    # This is expected when cancelling the task
+                    _LOGGER.debug("Server task cancelled successfully")
+                except asyncio.TimeoutError:
+                    _LOGGER.warning("Server shutdown timed out, forcing stop")
+                except Exception as e:
+                    _LOGGER.error(f"Error during server shutdown: {e}")
             
             _LOGGER.info("Webhook server stopped successfully")
             

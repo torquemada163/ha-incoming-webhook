@@ -214,3 +214,4 @@ internal_docs/
 test_*.py
 *.log
 TEMP*
+/scripts
